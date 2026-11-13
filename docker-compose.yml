@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    environment: { POSTGRES_USER: luke, POSTGRES_PASSWORD: luke, POSTGRES_DB: lukes_diner }
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U luke -d lukes_diner"], interval: 3s, retries: 15 }
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment: { DATABASE_URL: "postgresql+psycopg://luke:luke@db:5432/lukes_diner" }
+    ports: ["8000:8000"]
+    volumes: ["./data:/data"]
+    depends_on: { db: { condition: service_healthy } }
+  frontend:
+    build: ./frontend
+    env_file: ./frontend/.env.local
+    ports: ["3000:3000"]
+    depends_on: [backend]
+volumes:
+  pgdata:
